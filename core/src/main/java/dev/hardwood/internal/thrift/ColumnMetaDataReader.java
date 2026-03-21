@@ -14,7 +14,9 @@ import java.util.List;
 import dev.hardwood.metadata.ColumnMetaData;
 import dev.hardwood.metadata.CompressionCodec;
 import dev.hardwood.metadata.Encoding;
+import dev.hardwood.metadata.FieldPath;
 import dev.hardwood.metadata.PhysicalType;
+import dev.hardwood.metadata.Statistics;
 
 /**
  * Reader for ColumnMetaData from Thrift Compact Protocol.
@@ -41,6 +43,7 @@ public class ColumnMetaDataReader {
         long totalCompressedSize = 0;
         long dataPageOffset = 0;
         Long dictionaryPageOffset = null;
+        Statistics statistics = null;
 
         while (true) {
             ThriftCompactReader.FieldHeader header = reader.readFieldHeader();
@@ -111,6 +114,9 @@ public class ColumnMetaDataReader {
                         reader.skipField(header.type());
                     }
                     break;
+                case 8: // key_value_metadata (optional) - skipped
+                    reader.skipField(header.type());
+                    break;
                 case 9: // data_page_offset
                     if (header.type() == 0x06) {
                         dataPageOffset = reader.readI64();
@@ -130,13 +136,21 @@ public class ColumnMetaDataReader {
                         reader.skipField(header.type());
                     }
                     break;
+                case 12: // statistics (optional)
+                    if (header.type() == 0x0C) {
+                        statistics = StatisticsReader.read(reader);
+                    }
+                    else {
+                        reader.skipField(header.type());
+                    }
+                    break;
                 default:
                     reader.skipField(header.type());
                     break;
             }
         }
 
-        return new ColumnMetaData(type, encodings, pathInSchema, codec, numValues,
-                totalUncompressedSize, totalCompressedSize, dataPageOffset, dictionaryPageOffset);
+        return new ColumnMetaData(type, encodings, new FieldPath(List.copyOf(pathInSchema)), codec, numValues,
+                totalUncompressedSize, totalCompressedSize, dataPageOffset, dictionaryPageOffset, statistics);
     }
 }

@@ -784,6 +784,16 @@ Run the following command to format the source code and organize the imports as 
 ./mvnw process-sources
 ```
 
+### Running Claude Code
+
+A Docker Compose set-up is provided for running [Claude Code](https://claude.ai/claude-code) with all build dependencies (Java 25, Maven, `gh`) pre-installed.
+
+```shell
+GH_TOKEN=<your-token> docker compose run --rm claude
+```
+
+Set `GH_TOKEN` to a GitHub personal access token so that Claude Code can interact with issues and pull requests. The project directory is mounted into the container at `/workspace`, and Claude Code configuration is persisted in a named volume across sessions.
+
 ### Creating a Release
 
 See [RELEASING.md](RELEASING.md).
