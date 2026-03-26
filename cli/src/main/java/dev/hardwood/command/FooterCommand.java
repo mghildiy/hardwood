@@ -10,12 +10,10 @@ package dev.hardwood.command;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.Callable;
 
+import dev.hardwood.InputFile;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
@@ -39,22 +37,21 @@ public class FooterCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        if (fileMixin.isRemoteUri()) {
+        InputFile inputFile = fileMixin.toInputFile();
+        if (inputFile == null) {
             return CommandLine.ExitCode.SOFTWARE;
         }
-
-        Path path = fileMixin.toPath();
-        try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            long fileSize = channel.size();
+        try (inputFile) {
+            inputFile.open();
+            long fileSize = inputFile.length();
 
             if (fileSize < TRAILER_SIZE + MAGIC_SIZE) {
                 spec.commandLine().getErr().println("File is too small to be a valid Parquet file.");
                 return CommandLine.ExitCode.SOFTWARE;
             }
 
-            ByteBuffer trailer = ByteBuffer.allocate(TRAILER_SIZE).order(ByteOrder.LITTLE_ENDIAN);
-            channel.read(trailer, fileSize - TRAILER_SIZE);
-            trailer.flip();
+            ByteBuffer trailer = inputFile.readRange(fileSize - TRAILER_SIZE, TRAILER_SIZE)
+                    .order(ByteOrder.LITTLE_ENDIAN);
 
             int footerLength = trailer.getInt();
             byte[] trailingMagic = new byte[MAGIC_SIZE];
@@ -65,16 +62,15 @@ public class FooterCommand implements Callable<Integer> {
                 return CommandLine.ExitCode.SOFTWARE;
             }
 
-            ByteBuffer leadingMagic = ByteBuffer.allocate(MAGIC_SIZE);
-            channel.read(leadingMagic, 0);
-            leadingMagic.flip();
+            byte[] leadingMagic = new byte[MAGIC_SIZE];
+            inputFile.readRange(0, MAGIC_SIZE).get(leadingMagic);
 
             long footerOffset = fileSize - TRAILER_SIZE - footerLength;
 
             spec.commandLine().getOut().println("File Size:     " + fileSize + " bytes");
             spec.commandLine().getOut().println("Footer Offset: " + footerOffset + " bytes");
             spec.commandLine().getOut().println("Footer Length: " + footerLength + " bytes");
-            spec.commandLine().getOut().println("Leading Magic:  " + new String(leadingMagic.array(), StandardCharsets.US_ASCII));
+            spec.commandLine().getOut().println("Leading Magic:  " + new String(leadingMagic, StandardCharsets.US_ASCII));
             spec.commandLine().getOut().println("Trailing Magic: " + new String(trailingMagic, StandardCharsets.US_ASCII));
         }
         catch (IOException e) {
