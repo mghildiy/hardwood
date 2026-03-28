@@ -17,7 +17,7 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>parquet-testing-runner</artifactId>
+  <artifactId>hardwood-parquet-testing-runner</artifactId>
 
   <name>Hardwood Parquet Testing Runner</name>
   <description>Comparison tests between Hardwood and parquet-java reference implementation</description>
