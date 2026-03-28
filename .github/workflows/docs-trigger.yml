@@ -2,36 +2,28 @@ name: Trigger documentation publish
 
 on:
   push:
-    tags: ['v*']
-  workflow_run:
-    workflows: [Build]
-    types: [completed]
     branches: [main]
+    paths: ['docs/**']
+    tags: ['v*']
 
 jobs:
   dispatch:
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'push'
-      || github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Fire repository_dispatch to site repo
         env:
           GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            REF="${{ github.ref_name }}"
-            SHA="${{ github.sha }}"
-          else
-            REF="${{ github.event.workflow_run.head_branch }}"
-            SHA="${{ github.event.workflow_run.head_sha }}"
-          fi
+          REF="${{ github.ref_name }}"
+          SHA="${{ github.sha }}"
           if [[ "$REF" == v* ]]; then
             VERSION_LABEL="${REF#v}"
           else
             VERSION_LABEL="dev"
           fi
-          gh api repos/hardwood-hq/hardwood-hq.github.io/dispatches \
-            -f event_type=publish-docs \
-            -f "client_payload={\"source_ref\":\"$SHA\",\"version\":\"$VERSION_LABEL\",\"update_latest\":true}"
+          jq -n \
+            --arg ref "$SHA" \
+            --arg ver "$VERSION_LABEL" \
+            '{event_type: "publish-docs", client_payload: {source_ref: $ref, version: $ver, update_latest: true}}' \
+          | gh api repos/hardwood-hq/hardwood-hq.github.io/dispatches --input -

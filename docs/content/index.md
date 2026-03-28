@@ -17,7 +17,7 @@ Goals of the project are:
 
 * **Light-weight:** Implement the Parquet file format avoiding any 3rd party dependencies other than for compression algorithms (e.g. Snappy)
 * **Correct:** Support all Parquet files which are supported by the canonical [parquet-java](https://github.com/apache/parquet-java) library
-* **Fast:** Be as fast or faster as parquet-java
+* **Fast:** As fast or faster as parquet-java
 * **Complete:** Add a Parquet file writer (after 1.0)
 
 Latest version: 1.0.0.Alpha1, 2026-02-26
