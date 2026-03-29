@@ -7,6 +7,7 @@
 #
 
 import logging
+import os
 import subprocess
 
 log = logging.getLogger("mkdocs.hooks.git_commit")
@@ -14,15 +15,18 @@ log = logging.getLogger("mkdocs.hooks.git_commit")
 
 def on_config(config):
     if not config["extra"].get("commit_sha"):
-        try:
-            subprocess.run(
-                ["git", "config", "--global", "--add", "safe.directory", "/repo"],
-                check=False,
-            )
-            sha = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.STDOUT
-            ).strip()
+        sha = os.environ.get("SOURCE_REF")
+        if not sha:
+            try:
+                subprocess.run(
+                    ["git", "config", "--global", "--add", "safe.directory", "/repo"],
+                    check=False,
+                )
+                sha = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.STDOUT
+                ).strip()
+            except Exception as e:
+                log.warning("Could not determine git commit SHA: %s", e)
+        if sha:
             config["extra"]["commit_sha"] = sha
-        except Exception as e:
-            log.warning("Could not determine git commit SHA: %s", e)
     return config

@@ -344,11 +344,13 @@ jobs:
 
       - name: Deploy docs
         run: |
+          SHORT_SHA="${SOURCE_REF:0:8}"
           mike deploy \
             --config-file source/docs/mkdocs.yml \
             --branch gh-pages \
             --set-default \
             --update-aliases \
+            --message "Publish $VERSION from hardwood-hq/hardwood@$SHORT_SHA" \
             $VERSION latest
 
           git checkout gh-pages
