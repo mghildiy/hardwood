@@ -69,6 +69,9 @@ copyright: >-
   Licensed under
   <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">Creative Commons BY-SA 4.0</a>
 
+extra_css:
+  - stylesheets/extra.css
+
 extra:
   version:
     provider: mike
