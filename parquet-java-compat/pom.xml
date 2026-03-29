@@ -21,7 +21,7 @@
 
   <name>Hardwood Parquet-Java Compatibility</name>
   <description>Parquet-java API compatibility layer (no parquet-java/hadoop dependencies)</description>
-  <url>https://github.com/hardwood-hq/hardwood</url>
+  <url>https://hardwood.dev/</url>
 
   <dependencyManagement>
     <dependencies>

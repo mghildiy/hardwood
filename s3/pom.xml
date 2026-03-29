@@ -21,7 +21,7 @@
 
   <name>Hardwood S3</name>
   <description>S3 object storage support for Hardwood</description>
-  <url>https://github.com/hardwood-hq/hardwood</url>
+  <url>https://hardwood.dev/</url>
 
   <scm>
     <connection>scm:git:git://github.com/hardwood-hq/hardwood.git</connection>

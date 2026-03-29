@@ -21,7 +21,7 @@
 
   <name>Hardwood Avro</name>
   <description>Avro GenericRecord support for Hardwood</description>
-  <url>https://github.com/hardwood-hq/hardwood</url>
+  <url>https://hardwood.dev/</url>
 
   <properties>
     <avro.version>1.11.4</avro.version>

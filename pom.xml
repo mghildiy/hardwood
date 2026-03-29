@@ -19,7 +19,7 @@
   <name>Hardwood Parent</name>
   <description>A minimal dependency parser for the Apache Parquet file format</description>
   <inceptionYear>2026</inceptionYear>
-  <url>https://github.com/hardwood-hq/hardwood</url>
+  <url>https://hardwood.dev/</url>
 
   <licenses>
     <license>

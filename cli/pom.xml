@@ -27,7 +27,7 @@
 
   <name>Hardwood CLI</name>
   <description>CLI Parquet reader implementation</description>
-  <url>https://github.com/hardwood-hq/hardwood</url>
+  <url>https://hardwood.dev/</url>
 
   <scm>
     <connection>scm:git:git://github.com/hardwood-hq/hardwood.git</connection>
