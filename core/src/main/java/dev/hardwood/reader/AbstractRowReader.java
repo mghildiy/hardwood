@@ -16,7 +16,9 @@ import java.util.UUID;
 
 import dev.hardwood.internal.reader.BatchDataView;
 import dev.hardwood.internal.reader.FlatColumnData;
+import dev.hardwood.internal.reader.RecordFilterEvaluator;
 import dev.hardwood.internal.util.StringToIntMap;
+import dev.hardwood.jfr.RecordFilterEvent;
 import dev.hardwood.row.PqDoubleList;
 import dev.hardwood.row.PqIntList;
 import dev.hardwood.row.PqList;
@@ -31,6 +33,7 @@ import dev.hardwood.schema.ProjectedSchema;
 abstract class AbstractRowReader implements RowReader {
 
     protected BatchDataView dataView;
+    protected FilterPredicate filterPredicate;
 
     // Iteration state shared by all row readers
     protected int rowIndex = -1;
@@ -146,17 +149,20 @@ abstract class AbstractRowReader implements RowReader {
             if (!exhausted) {
                 cacheFlatBatch();
             }
-            // Re-check after initialization since it loads the first batch
-            return !exhausted && rowIndex + 1 < batchSize;
+            if (exhausted) {
+                return false;
+            }
+            // After initialization, find the first matching row
+            return hasNextMatch();
         }
         if (rowIndex + 1 < batchSize) {
-            return true;
+            return hasNextMatch();
         }
         boolean loaded = loadNextBatch();
         if (loaded) {
             cacheFlatBatch();
         }
-        return loaded;
+        return loaded && hasNextMatch();
     }
 
     @Override
@@ -165,8 +171,86 @@ abstract class AbstractRowReader implements RowReader {
             initialize();
             cacheFlatBatch();
         }
-        rowIndex++;
+        if (pendingMatchRow >= 0) {
+            // hasNext() already found the next matching row
+            rowIndex = pendingMatchRow;
+            pendingMatchRow = -1;
+        }
+        else if (isRecordFilterActive()) {
+            // next() called without hasNext() — scan for next match
+            hasNextMatch();
+            rowIndex = pendingMatchRow;
+            pendingMatchRow = -1;
+        }
+        else {
+            rowIndex++;
+        }
         dataView.setRowIndex(rowIndex);
+    }
+
+    /// Row index of the next matching row, found by `hasNextMatch()` and consumed by `next()`.
+    /// A value of -1 means no pending match (next() must scan or advance normally).
+    private int pendingMatchRow = -1;
+
+    /// Pre-computed set of matching rows for the current batch. Computed once per batch
+    /// by `RecordFilterEvaluator.matchBatch()` and queried via `nextSetBit()` for each
+    /// `hasNextMatch()` call. Reset to null on batch transitions.
+    private BitSet matchingRowsInBatch;
+
+    // Record-level filter counters for JFR reporting
+    private long totalRecords;
+    private long recordsKept;
+
+    /// Scans forward from `rowIndex + 1` to find the next row matching the filter.
+    /// Loads new batches as needed. Returns true if a match is found.
+    private boolean hasNextMatch() {
+        if (!isRecordFilterActive()) {
+            pendingMatchRow = rowIndex + 1;
+            return pendingMatchRow < batchSize;
+        }
+
+        while (true) {
+            // Compute match mask for current batch if not yet done
+            if (matchingRowsInBatch == null) {
+                matchingRowsInBatch = RecordFilterEvaluator.matchBatch(filterPredicate, batchSize,
+                        flatValueArrays, flatNulls, nameCache);
+                totalRecords += batchSize;
+                recordsKept += matchingRowsInBatch.cardinality();
+            }
+
+            // Find the next matching row after current position
+            int nextMatchingRow = matchingRowsInBatch.nextSetBit(rowIndex + 1);
+            if (nextMatchingRow >= 0 && nextMatchingRow < batchSize) {
+                pendingMatchRow = nextMatchingRow;
+                return true;
+            }
+
+            // Current batch exhausted — load next
+            matchingRowsInBatch = null;
+            if (!loadNextBatch()) {
+                exhausted = true;
+                emitRecordFilterEvent();
+                return false;
+            }
+            cacheFlatBatch();
+            rowIndex = -1;
+        }
+    }
+
+    /// Emits a JFR event summarizing record-level filtering results.
+    private void emitRecordFilterEvent() {
+        if (totalRecords > 0) {
+            RecordFilterEvent event = new RecordFilterEvent();
+            event.totalRecords = totalRecords;
+            event.recordsKept = recordsKept;
+            event.recordsSkipped = totalRecords - recordsKept;
+            event.commit();
+        }
+    }
+
+    /// Returns true if record-level filtering is active and usable.
+    private boolean isRecordFilterActive() {
+        return filterPredicate != null && flatFastPath && nameCache != null;
     }
 
     // ==================== Primitive Type Accessors ====================
