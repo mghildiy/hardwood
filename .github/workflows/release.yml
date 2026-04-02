@@ -38,9 +38,6 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: 'Build'
-        run: ./mvnw -ntp -B verify -DskipTests
-
       - name: 'Configure git for CI'
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"

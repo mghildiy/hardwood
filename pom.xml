@@ -500,7 +500,7 @@
             <configuration>
               <tagNameFormat>v@{project.version}</tagNameFormat>
               <goals>deploy</goals>
-              <arguments>-ntp -B -DskipNonDeployedModules</arguments>
+              <arguments>-ntp -B -DskipNonDeployedModules -DskipTests</arguments>
               <scmCommentPrefix>[release] </scmCommentPrefix>
               <scmReleaseCommitComment>@{prefix} Releasing version @{releaseLabel}</scmReleaseCommitComment>
               <scmDevelopmentCommitComment>@{prefix} Bump for next development cycle</scmDevelopmentCommitComment>

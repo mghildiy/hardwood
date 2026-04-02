@@ -72,6 +72,18 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
   exit 1
 fi
 
+# -- Validate tag does not already exist -------------------------------------
+
+RELEASE_TAG="v${RELEASE_VERSION}"
+if git rev-parse "${RELEASE_TAG}" &>/dev/null; then
+  echo "Error: tag '${RELEASE_TAG}' already exists locally"
+  exit 1
+fi
+if git ls-remote --tags origin "${RELEASE_TAG}" | grep -q "${RELEASE_TAG}"; then
+  echo "Error: tag '${RELEASE_TAG}' already exists on remote"
+  exit 1
+fi
+
 # -- Capture the base branch before switching --------------------------------
 
 START_TIME="$(date +%s)"
@@ -154,8 +166,7 @@ echo "Merging release branch back into ${BASE_BRANCH}..."
 git checkout "${BASE_BRANCH}"
 git merge --ff-only "release/${RELEASE_VERSION}"
 git push origin "${BASE_BRANCH}"
-git push origin "v${RELEASE_VERSION}"
-git push origin --delete "release/${RELEASE_VERSION}"
+git push origin --delete "release/${RELEASE_VERSION}" # tag already created by JRelease
 git branch -d "release/${RELEASE_VERSION}"
 
 ELAPSED=$(( $(date +%s) - START_TIME ))
