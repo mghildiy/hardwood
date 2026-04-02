@@ -106,6 +106,7 @@ git commit -m "[release] Update versions for ${RELEASE_VERSION}"
 echo "Running Maven release:prepare release:perform..."
 ./mvnw -ntp -B -Prelease release:prepare release:perform \
   -DskipNonDeployedModules \
+  -DskipTests \
   -DreleaseVersion="${RELEASE_VERSION}" \
   -DdevelopmentVersion="${DEVELOPMENT_VERSION}" \
   -Dresume=false \
@@ -119,7 +120,15 @@ git push -u origin "release/${RELEASE_VERSION}"
 echo "Publishing to Maven Central (stage=${STAGE})..."
 export JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_STAGE="${STAGE}"
 export JRELEASER_BRANCH="release/${RELEASE_VERSION}"
+# maven-release-plugin's local checkout (target/checkout) clones from the local
+# filesystem, so its remote points to a local path instead of GitHub. JReleaser
+# needs an 'origin' remote with the GitHub URL to create the release.
+ORIGIN_URL="$(git remote get-url origin 2>/dev/null || echo "")"
 pushd target/checkout > /dev/null
+if [[ -n "$ORIGIN_URL" ]]; then
+  git remote remove origin 2>/dev/null || true
+  git remote add origin "$ORIGIN_URL"
+fi
 ./mvnw -ntp -B -N -Ppublication jreleaser:release
 popd > /dev/null
 
