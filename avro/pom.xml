@@ -23,6 +23,13 @@
   <description>Avro GenericRecord support for Hardwood</description>
   <url>https://hardwood.dev/</url>
 
+  <scm>
+    <connection>scm:git:git://github.com/hardwood-hq/hardwood.git</connection>
+    <developerConnection>scm:git:git@github.com:hardwood-hq/hardwood.git</developerConnection>
+    <url>https://github.com/hardwood-hq/hardwood/</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
     <avro.version>1.11.4</avro.version>
   </properties>

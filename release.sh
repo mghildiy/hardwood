@@ -106,12 +106,12 @@ git commit -m "[release] Update versions for ${RELEASE_VERSION}"
 echo "Running Maven release:prepare release:perform..."
 ./mvnw -ntp -B -Prelease release:prepare release:perform \
   -DskipNonDeployedModules \
-  -DskipTests \
   -DreleaseVersion="${RELEASE_VERSION}" \
   -DdevelopmentVersion="${DEVELOPMENT_VERSION}" \
   -Dresume=false \
   -DpushChanges=false \
   -DlocalCheckout=true \
+  -DpreparationGoals="clean verify -DskipTests" \
   -Darguments="-DskipTests"
 git push -u origin "release/${RELEASE_VERSION}"
 
