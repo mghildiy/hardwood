@@ -26,6 +26,7 @@ nav:
   - Parquet-Java Compatibility: compat.md
   - API Reference: /api/latest/
   - Release Notes: release-notes.md
+  - Contributing: contributing.md
 
 theme:
   name: material
